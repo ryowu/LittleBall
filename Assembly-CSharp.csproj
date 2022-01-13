@@ -59,6 +59,8 @@
     <Compile Include="Assets\Script\PlayerBallController.cs" />
     <Compile Include="Assets\Script\ContainerController.cs" />
     <Compile Include="Assets\Script\SkillFruitController.cs" />
+    <Compile Include="Assets\Script\RPG_Handler.cs" />
+    <Compile Include="Assets\Script\RPGController.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

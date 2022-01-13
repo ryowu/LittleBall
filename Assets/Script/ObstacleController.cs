@@ -94,22 +94,36 @@ public class ObstacleController : MonoBehaviour
 		}
 	}
 
-	private void ProcessCollision(Collision2D collision)
+	private void OnTriggerEnter2D(Collider2D collision)
 	{
-		Rigidbody2D rb = collision.gameObject.GetComponent<Rigidbody2D>();
-		rb.AddForce(new Vector2((UnityEngine.Random.Range(-1f, 1f) > 0 ? 1f : -1f) * 50f, 200f));
-
-		int ballDamage = collision.gameObject.GetComponent<PlayerBallController>().BallDamage;
-		hp -= ballDamage;
-		UpdateColor();
-		pc.Score++;
-		pc.RefreshScore();
-		t.text = hp.ToString();
-
-		if (hp <= 0)
+		if (collision.gameObject.CompareTag("RPG"))
 		{
+			pc.Score += hp;
+			pc.RefreshScore();
 			Destroy(t.gameObject);
 			Destroy(this.gameObject);
+		}
+	}
+
+	private void ProcessCollision(Collision2D collision)
+	{
+		if (collision.gameObject.CompareTag("Player"))
+		{
+			Rigidbody2D rb = collision.gameObject.GetComponent<Rigidbody2D>();
+			rb.AddForce(new Vector2((UnityEngine.Random.Range(-1f, 1f) > 0 ? 1f : -1f) * 50f, 200f));
+
+			int ballDamage = collision.gameObject.GetComponent<PlayerBallController>().BallDamage;
+			hp -= ballDamage;
+			UpdateColor();
+			pc.Score++;
+			pc.RefreshScore();
+			t.text = hp.ToString();
+
+			if (hp <= 0)
+			{
+				Destroy(t.gameObject);
+				Destroy(this.gameObject);
+			}
 		}
 	}
 

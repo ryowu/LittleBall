@@ -9,7 +9,8 @@ public enum FruitSkills
 	BigBall,
 	PowerBall,
 	LessObstacle,
-	Rearrange
+	Rearrange,
+	RPG
 }
 
 public class ProcessController : MonoBehaviour
@@ -24,7 +25,7 @@ public class ProcessController : MonoBehaviour
 	private const string BallStringFormat = "BALL:{0}/{1}";
 	private const string ScoreStringFormat = "SCORE:{0}";
 	private const string LevelStringFormat = "LEVEL:{0}";
-	private const string HighScoreStringFormat = "HIGH SCORE:{0}";
+	private const string HighScoreStringFormat = "HIGHEST:{0}";
 	//Skill fruit
 	private const float FRUIT_TOTAL_RATE = 20f; //max 100
 	private const float LESS_BLOCKS_RATE = 0.8f; //banana skill
@@ -32,10 +33,12 @@ public class ProcessController : MonoBehaviour
 	private const string BANANA_TEXT = "BLOCKS 20% OFF IN NEXT 2 ROUNDS";
 	private const string APPLE_TEXT = "POWER BALL IN NEXT 2 ROUNDS";
 	private const string PINEAPPLE_TEXT = "BLOCKS REARRANGED";
+	private const string KIWI_TEXT = "RPG ACQUIRED";
 	#endregion
 
 	#region SerializeField
 	[SerializeField] private GameObject playerBall;
+	[SerializeField] private GameObject playerRPG;
 	[SerializeField] private GameObject obstacleSquare;
 	[SerializeField] private GameObject obstacleHexagon;
 	[SerializeField] private GameObject obstacleTriangle;
@@ -47,11 +50,14 @@ public class ProcessController : MonoBehaviour
 	[SerializeField] private Text SkillText;
 	[SerializeField] private Text GameoverText;
 	[SerializeField] private AudioSource GameOverEffect;
+	[SerializeField] private AudioSource RPGEffect;
 	[SerializeField] private GameObject infoLabelPlaceholder;
 	[SerializeField] private GameObject Melon;
 	[SerializeField] private GameObject Apple;
 	[SerializeField] private GameObject Banana;
 	[SerializeField] private GameObject Pineapple;
+	[SerializeField] private GameObject Kiwi;
+	[SerializeField] private GameObject RPGButton;
 	#endregion
 
 	#region private members
@@ -70,11 +76,13 @@ public class ProcessController : MonoBehaviour
 	private int skillTimes;
 	private bool itemExist;
 	private bool obstacleStartPosDeltaTag;
-
+	private bool isRPGflying;
 	private FruitSkills currentSkill;
 	#endregion
 
 	public int Score;
+	public bool RPG_Ready;
+	public bool IsPlaying { get { return this.isPlaying; } }
 
 	#region Start and Update
 	// Start is called before the first frame update
@@ -91,6 +99,38 @@ public class ProcessController : MonoBehaviour
 	// Update is called once per frame
 	void Update()
 	{
+		if (isRPGflying) return;
+
+		//Process RPG
+		if (RPG_Ready && Input.GetMouseButton(0))
+		{
+			//Get click postion
+			Vector2 worldPosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+			//if it is valid position, under deadline
+			if (worldPosition.y > 5.15f || worldPosition.y < -9.3f) return;
+
+			RPGEffect.Play();
+
+			RPG_Ready = false;
+			RPGButton.GetComponent<RPG_Handler>().rpgReady = false;
+			RPGButton.SetActive(false);
+			isRPGflying = true;
+
+			//
+			forceVec = worldPosition - new Vector2(0f, 7.2f);
+
+			//Send new RPG out
+			Vector3 relativeTarget = forceVec.normalized;
+			Quaternion toQuaternion = Quaternion.FromToRotation(Vector3.up, relativeTarget);
+
+			GameObject newRPG = Instantiate(playerRPG, new Vector2(0f, 7.2f), toQuaternion, transform.parent);
+			Rigidbody2D rpgRB = newRPG.GetComponent<Rigidbody2D>();
+			rpgRB.bodyType = RigidbodyType2D.Dynamic;
+			rpgRB.AddForce(forceVec.normalized * 800f);
+			return;
+		}
+
 		//Process mouse input
 		if (Input.GetMouseButton(0) && currentPlayerBallCount >= maxPlayerBallCount)
 		{
@@ -110,8 +150,6 @@ public class ProcessController : MonoBehaviour
 			SkillText.text = string.Empty;
 			skillTimes--;
 			if (skillTimes < 0) skillTimes = 0;
-
-
 		}
 
 		//Send new ball
@@ -154,6 +192,20 @@ public class ProcessController : MonoBehaviour
 	#endregion
 
 	#region Private method
+	private void OnTriggerEnter2D(Collider2D collision)
+	{
+		//Destroy player RPG
+		Destroy(collision.gameObject);
+
+		if (collision.gameObject.CompareTag("RPG"))
+		{
+			isRPGflying = false;
+			SkillText.text = string.Empty;
+			GameoverText.text = string.Empty;
+			GenerateNextStep();
+		}
+	}
+
 	private void OnCollisionEnter2D(Collision2D collision)
 	{
 		//Destroy player ball
@@ -164,30 +216,35 @@ public class ProcessController : MonoBehaviour
 
 		if (recyledBallCount >= maxPlayerBallCount)
 		{
-			//game steps calculate
-			gameStep++;
-			level = gameStep / 10 + 1;
-			if (level > 10)
-				level = 10;
-			maxPlayerBallCount = STARTUP_MAX_BALL_COUNT - 1 + (int)((float)level * 1.5f);
-			RefreshScore();
-
-			//Reset ball count
-			recyledBallCount = 0;
-			currentPlayerBallCount = maxPlayerBallCount;
-			RefreshBallCount();
-
-			//move and add new obstacles
-			MoveAndAddObstalces();
-
-			//if reach top
-
-			//allow playing again
-			isPlaying = false;
-
-			//create a fruit item
-			GenerateSkillFruit();
+			GenerateNextStep();
 		}
+	}
+
+	private void GenerateNextStep()
+	{
+		//game steps calculate
+		gameStep++;
+		level = gameStep / 10 + 1;
+		if (level > 10)
+			level = 10;
+		maxPlayerBallCount = STARTUP_MAX_BALL_COUNT - 1 + (int)((float)level * 1.5f);
+		RefreshScore();
+
+		//Reset ball count
+		recyledBallCount = 0;
+		currentPlayerBallCount = maxPlayerBallCount;
+		RefreshBallCount();
+
+		//move and add new obstacles
+		MoveAndAddObstalces();
+
+		//if reach top
+
+		//allow playing again
+		isPlaying = false;
+
+		//create a fruit item
+		GenerateSkillFruit();
 	}
 
 	private void GenerateSkillFruit()
@@ -195,15 +252,24 @@ public class ProcessController : MonoBehaviour
 		if (!itemExist)
 		{
 			float fruitRate = UnityEngine.Random.Range(0f, 100f);
+
+			////test
+			//fruitRate = 6f;
+
 			if (fruitRate <= FRUIT_TOTAL_RATE)
 			{
 				float posX = UnityEngine.Random.Range(-2.97f, 2.95f);
-				if (fruitRate < 5f)
+				if (fruitRate < 4f)
 				{
 					GameObject newPineapple = Instantiate(Pineapple, new Vector2(posX, 4.3f), transform.rotation, transform.parent);
 					newPineapple.GetComponent<SkillFruitController>().pc = this;
 				}
-				else if (fruitRate < 10f)
+				else if (fruitRate < 7f)
+				{
+					GameObject newKiwi = Instantiate(Kiwi, new Vector2(posX, 4.3f), transform.rotation, transform.parent);
+					newKiwi.GetComponent<SkillFruitController>().pc = this;
+				}
+				else if (fruitRate < 11f)
 				{
 					GameObject newApple = Instantiate(Apple, new Vector2(posX, 4.3f), transform.rotation, transform.parent);
 					newApple.GetComponent<SkillFruitController>().pc = this;
@@ -402,6 +468,10 @@ public class ProcessController : MonoBehaviour
 		MoveAndAddObstalces();
 		//Allow start game
 		isPlaying = false;
+
+		//RPG
+		RPG_Ready = false;
+		isRPGflying = false;
 	}
 
 	private void ResetCameraSize()
@@ -443,6 +513,13 @@ public class ProcessController : MonoBehaviour
 				{
 					SkillText.text = PINEAPPLE_TEXT;
 					RearrangeObstacles();
+					skillTimes = 0;
+					break;
+				}
+			case FruitSkills.RPG:
+				{
+					SkillText.text = KIWI_TEXT;
+					RPGButton.SetActive(true);
 					skillTimes = 0;
 					break;
 				}
