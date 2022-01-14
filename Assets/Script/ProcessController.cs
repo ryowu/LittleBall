@@ -21,6 +21,7 @@ public class ProcessController : MonoBehaviour
 	private const float OBSTACLE_HORZ_DISTANCE = 1.5f;
 	private const float OBSTACLE_START_Y = -7.6f;
 	private const int STARTUP_MAX_BALL_COUNT = 3;
+	private const string LEVEL_UP_TEXT = "LEVEL UP";
 	//String format
 	private const string BallStringFormat = "BALL:{0}/{1}";
 	private const string ScoreStringFormat = "SCORE:{0}";
@@ -51,6 +52,7 @@ public class ProcessController : MonoBehaviour
 	[SerializeField] private Text GameoverText;
 	[SerializeField] private AudioSource GameOverEffect;
 	[SerializeField] private AudioSource RPGEffect;
+	[SerializeField] private AudioSource LevelUpEffect;
 	[SerializeField] private GameObject infoLabelPlaceholder;
 	[SerializeField] private GameObject Melon;
 	[SerializeField] private GameObject Apple;
@@ -125,6 +127,7 @@ public class ProcessController : MonoBehaviour
 			Quaternion toQuaternion = Quaternion.FromToRotation(Vector3.up, relativeTarget);
 
 			GameObject newRPG = Instantiate(playerRPG, new Vector2(0f, 7.2f), toQuaternion, transform.parent);
+			newRPG.GetComponent<RPGController>().pc = this;
 			Rigidbody2D rpgRB = newRPG.GetComponent<Rigidbody2D>();
 			rpgRB.bodyType = RigidbodyType2D.Dynamic;
 			rpgRB.AddForce(forceVec.normalized * 800f);
@@ -199,10 +202,7 @@ public class ProcessController : MonoBehaviour
 
 		if (collision.gameObject.CompareTag("RPG"))
 		{
-			isRPGflying = false;
-			SkillText.text = string.Empty;
-			GameoverText.text = string.Empty;
-			GenerateNextStep();
+			OnRPGdestroy();
 		}
 	}
 
@@ -224,6 +224,12 @@ public class ProcessController : MonoBehaviour
 	{
 		//game steps calculate
 		gameStep++;
+		//level up
+		if (gameStep % 10 == 0)
+		{
+			SkillText.text = LEVEL_UP_TEXT;
+			LevelUpEffect.Play();
+		}
 		level = gameStep / 10 + 1;
 		if (level > 10)
 			level = 10;
@@ -528,6 +534,14 @@ public class ProcessController : MonoBehaviour
 
 		currentSkill = index;
 		itemExist = false;
+	}
+
+	public void OnRPGdestroy()
+	{
+		isRPGflying = false;
+		SkillText.text = string.Empty;
+		GameoverText.text = string.Empty;
+		GenerateNextStep();
 	}
 	#endregion
 }
