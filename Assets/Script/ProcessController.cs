@@ -472,6 +472,7 @@ public class ProcessController : MonoBehaviour
 		//RPG
 		RPG_Ready = false;
 		isRPGflying = false;
+		RPGButton.SetActive(true);
 	}
 
 	private void ResetCameraSize()
