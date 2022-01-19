@@ -112,7 +112,8 @@ public class ProcessController : MonoBehaviour
 			//if it is valid position, under deadline
 			if (worldPosition.y > 5.15f || worldPosition.y < -9.3f) return;
 
-			RPGEffect.Play();
+			if (GlobalVar.SoundOn)
+				RPGEffect.Play();
 
 			RPG_Ready = false;
 			RPGButton.GetComponent<RPG_Handler>().rpgReady = false;
@@ -228,7 +229,8 @@ public class ProcessController : MonoBehaviour
 		if (gameStep % 10 == 0)
 		{
 			SkillText.text = LEVEL_UP_TEXT;
-			LevelUpEffect.Play();
+			if (GlobalVar.SoundOn)
+				LevelUpEffect.Play();
 		}
 		level = gameStep / 10 + 1;
 		if (level > 10)
@@ -342,7 +344,7 @@ public class ProcessController : MonoBehaviour
 		}
 		if (RandomTrue())
 		{
-			obstacles.Add(InitObsctale(new Vector2(startX + OBSTACLE_HORZ_DISTANCE, OBSTACLE_START_Y))); 
+			obstacles.Add(InitObsctale(new Vector2(startX + OBSTACLE_HORZ_DISTANCE, OBSTACLE_START_Y)));
 			tempCount++;
 		}
 		if (RandomTrue())
@@ -432,7 +434,8 @@ public class ProcessController : MonoBehaviour
 		}
 		GameoverText.text = string.Format("SCORE:{0}" + Environment.NewLine + Environment.NewLine + "GAMEOVER" + Environment.NewLine + "CLICK TO START", Score);
 		GameoverText.enabled = true;
-		GameOverEffect.Play();
+		if (GlobalVar.SoundOn)
+			GameOverEffect.Play();
 		InitGame();
 	}
 

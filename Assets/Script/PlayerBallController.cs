@@ -15,18 +15,24 @@ public class PlayerBallController : MonoBehaviour
 
 	private void OnCollisionEnter2D(Collision2D collision)
 	{
-		if (collision.gameObject.CompareTag("obstacle"))
-			ballhit.Play();
-		else if (collision.gameObject.CompareTag("item"))
-			CollectEffect.Play();
+		if (GlobalVar.SoundOn)
+		{
+			if (collision.gameObject.CompareTag("obstacle"))
+				ballhit.Play();
+			else if (collision.gameObject.CompareTag("item"))
+				CollectEffect.Play();
+		}
 	}
 
 	private void OnCollisionStay2D(Collision2D collision)
 	{
-		if (collision.gameObject.CompareTag("obstacle"))
-			ballhit.Play();
-		else if (collision.gameObject.CompareTag("item"))
-			CollectEffect.Play();
+		if (GlobalVar.SoundOn)
+		{
+			if (collision.gameObject.CompareTag("obstacle"))
+				ballhit.Play();
+			else if (collision.gameObject.CompareTag("item"))
+				CollectEffect.Play();
+		}
 	}
 
 	private void Start()
